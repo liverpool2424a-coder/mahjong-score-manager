@@ -1,4 +1,4 @@
-const CACHE_NAME = "mahjong-scorebook-v15-confirm-modal-fix";
+const CACHE_NAME = "mahjong-scorebook-v16-player-detail-fix";
 
 const APP_SHELL = [
   "./",
