@@ -1,4 +1,4 @@
-const CACHE_NAME = "mahjong-scorebook-v21-count-black";
+const CACHE_NAME = "mahjong-scorebook-v22-history-cards-edit-complete";
 
 const APP_SHELL = [
   "./",
