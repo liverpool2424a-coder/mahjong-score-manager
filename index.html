@@ -226,6 +226,9 @@ body.history-page-active .header > div:last-child{
   color:#111811!important;
   font-weight:800!important;
 }
+</style><style>
+#records .sort-header{appearance:none;border:0;background:transparent;color:#111811;font:inherit;font-weight:800;padding:6px 3px;cursor:pointer;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;white-space:nowrap}
+#records .sort-header:focus,#records .sort-header:active{color:#075eb8;outline:2px solid rgba(7,94,184,.22);border-radius:5px}
 </style></head>
 <body>
 <div class="wrap">
@@ -323,7 +326,7 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 <script>let activeAppPage='input';function switchPage(page,scrollTop=true){if(page==='input'&&document.body.classList.contains('viewer'))page='history';activeAppPage=page;document.body.classList.toggle('history-page-active',page==='history');document.querySelectorAll('.app-page').forEach(el=>el.classList.toggle('active',el.dataset.page===page));document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.target===page));if(scrollTop)window.scrollTo({top:0,behavior:'smooth'})}navInput.addEventListener('click',()=>switchPage('input'));navHistory.addEventListener('click',()=>switchPage('history'));const oldStartEditNav=startEdit;startEdit=function(id){oldStartEditNav(id);switchPage('input',false);setTimeout(()=>currentMatch?.scrollIntoView({behavior:'smooth',block:'start'}),50)};const oldApplyCloudModeNav=applyCloudMode;applyCloudMode=function(){oldApplyCloudModeNav();if(!isRoomAdmin)switchPage('history',false);else switchPage(activeAppPage,false)};const oldSettleNav=settle.onclick;settle.onclick=async function(e){error.textContent='';await oldSettleNav.call(this,e);if(!error.textContent)switchPage('history')};switchPage(document.body.classList.contains('viewer')?'history':'input',false);</script><div id="confirmModal" class="app-modal" aria-hidden="true"><div class="modal-backdrop" data-close="confirm"></div><div class="modal-card"><h2>この内容で確定しますか？</h2><div id="confirmSummary"></div><div class="actions"><button id="cancelConfirm" class="btn">戻る</button><button id="executeConfirm" class="btn primary">確定する</button></div></div></div><div id="playerModal" class="app-modal" aria-hidden="true"><div class="modal-backdrop" data-close="player"></div><div class="modal-card detail-card"><div class="history-head"><h2 id="playerDetailName">プレイヤー詳細</h2><button id="closePlayerDetail" class="btn">閉じる</button></div><div id="playerDetailBody"></div></div></div><script>
-let analyticsPeriod='all',analyticsMode='all',pendingConfirm=false;
+let analyticsPeriod='all',analyticsMode='all',pendingConfirm=false,recordsSortKey='score';
 function filteredAnalyticsSessions(){
   let list=[...state.sessions].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
   if(analyticsMode!=='all')list=list.filter(s=>Number(s.mode)===Number(analyticsMode));
@@ -343,12 +346,21 @@ function analyticsRecords(list=filteredAnalyticsSessions()){
       (s.rows||[]).forEach(row=>{const rank=rankFor(row,i);r.rounds++;r.rankSum+=rank;if(rank>=1&&rank<=4)r.ranks[rank-1]++});m.set(name,r)
     })
   });
-  return [...m.values()].map(r=>({...r,avgRank:r.rounds?r.rankSum/r.rounds:0,topRate:r.rounds?r.ranks[0]/r.rounds*100:0,place2Rate:r.rounds?(r.ranks[0]+r.ranks[1])/r.rounds*100:0})).sort((a,b)=>b.payment-a.payment||b.score-a.score)
+  return [...m.values()].map(r=>({...r,avgRank:r.rounds?r.rankSum/r.rounds:0,topRate:r.rounds?r.ranks[0]/r.rounds*100:0,place2Rate:r.rounds?(r.ranks[0]+r.ranks[1])/r.rounds*100:0}))
 }
+function sortAnalyticsRecords(records){
+  const list=[...records];
+  if(recordsSortKey==='avgRank') return list.sort((a,b)=>a.avgRank-b.avgRank||b.score-a.score);
+  if(recordsSortKey==='topRate') return list.sort((a,b)=>b.topRate-a.topRate||b.score-a.score);
+  if(recordsSortKey==='place2Rate') return list.sort((a,b)=>b.place2Rate-a.place2Rate||b.score-a.score);
+  return list.sort((a,b)=>b.score-a.score||b.payment-a.payment);
+}
+function sortMark(key){return recordsSortKey===key?' ▼':''}
 function renderRecords(){
-  const list=filteredAnalyticsSessions(),rs=analyticsRecords(list);const count=document.getElementById('filterCount');if(count)count.textContent=`${list.length}セット・${rs.reduce((a,r)=>a+r.rounds,0)}半荘`;
-  $('#records').innerHTML=rs.length?`<table><thead><tr><th>順位</th><th>名前</th><th>セット</th><th>半荘</th><th>平均順位</th><th>1着率</th><th>連対率</th><th>順位分布</th><th>累計点</th><th>通算収支</th></tr></thead><tbody>${rs.map((r,i)=>`<tr><td>${i+1}</td><td><button class="player-link" data-player="${esc(r.name)}">${esc(r.name)}</button></td><td>${r.sessions}</td><td>${r.rounds}</td><td><b>${r.avgRank.toFixed(2)}</b></td><td>${r.topRate.toFixed(1)}%</td><td>${r.place2Rate.toFixed(1)}%</td><td>${r.ranks.map((v,j)=>`${j+1}着:${v}`).join(' / ')}</td><td>${fmt(r.score)}</td><td class="${r.payment>=0?'positive':'negative'}"><b>${yen(r.payment)}</b></td></tr>`).join('')}</tbody></table>`:'<div class="empty">条件に一致する確定済み対局がありません</div>';
+  const list=filteredAnalyticsSessions(),rs=sortAnalyticsRecords(analyticsRecords(list));const count=document.getElementById('filterCount');if(count)count.textContent=`${list.length}セット・${rs.reduce((a,r)=>a+r.rounds,0)}半荘`;
+  $('#records').innerHTML=rs.length?`<table><thead><tr><th>順位</th><th>名前</th><th>セット</th><th>半荘</th><th><button class="sort-header" data-sort="avgRank">平均順位${sortMark('avgRank')}</button></th><th><button class="sort-header" data-sort="topRate">1着率${sortMark('topRate')}</button></th><th><button class="sort-header" data-sort="place2Rate">連対率${sortMark('place2Rate')}</button></th><th>順位分布</th><th><button class="sort-header" data-sort="score">累計点${sortMark('score')}</button></th><th>通算収支</th></tr></thead><tbody>${rs.map((r,i)=>`<tr><td>${i+1}</td><td><button class="player-link" data-player="${esc(r.name)}">${esc(r.name)}</button></td><td>${r.sessions}</td><td>${r.rounds}</td><td><b>${r.avgRank.toFixed(2)}</b></td><td>${r.topRate.toFixed(1)}%</td><td>${r.place2Rate.toFixed(1)}%</td><td>${r.ranks.map((v,j)=>`${j+1}着:${v}`).join(' / ')}</td><td class="${r.score>=0?'positive':'negative'}"><b>${fmt(r.score)}</b></td><td class="${r.payment>=0?'positive':'negative'}"><b>${yen(r.payment)}</b></td></tr>`).join('')}</tbody></table>`:'<div class="empty">条件に一致する確定済み対局がありません</div>';
   $('#records').querySelectorAll('[data-player]').forEach(b=>b.onclick=()=>showPlayerDetail(b.dataset.player));
+  $('#records').querySelectorAll('[data-sort]').forEach(b=>b.onclick=()=>{recordsSortKey=b.dataset.sort;renderRecords()});
 }
 function showPlayerDetail(name){
   const list=filteredAnalyticsSessions().filter(s=>(s.players||[]).includes(name));const r=analyticsRecords(list).find(x=>x.name===name);if(!r)return;
