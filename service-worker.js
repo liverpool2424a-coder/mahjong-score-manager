@@ -1,4 +1,4 @@
-const CACHE_NAME = "mahjong-scorebook-v29-mobile-table-lines";
+const CACHE_NAME = "mahjong-scorebook-v30-fixed-auto-last-player";
 
 const APP_SHELL = [
   "./",
