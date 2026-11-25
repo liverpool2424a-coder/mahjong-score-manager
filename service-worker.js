@@ -1,4 +1,4 @@
-const CACHE_NAME = "mahjong-scorebook-v24-played-date";
+const CACHE_NAME = "mahjong-scorebook-v25-played-date-fix";
 
 const APP_SHELL = [
   "./",
