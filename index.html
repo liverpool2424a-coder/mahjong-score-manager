@@ -229,6 +229,20 @@ body.history-page-active .header > div:last-child{
 </style><style>
 #records .sort-header{appearance:none;border:0;background:transparent;color:#111811;font:inherit;font-weight:800;padding:6px 3px;cursor:pointer;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;white-space:nowrap}
 #records .sort-header:focus,#records .sort-header:active{color:#075eb8;outline:2px solid rgba(7,94,184,.22);border-radius:5px}
+</style><style>
+/* 通算成績表: 見出しは1行、順位分布だけ指定位置で2行 */
+#records table{table-layout:auto!important}
+#records thead th{white-space:nowrap!important;word-break:keep-all!important;overflow-wrap:normal!important;vertical-align:middle!important}
+#records thead .sort-header{white-space:nowrap!important;word-break:keep-all!important;display:inline-block!important}
+#records tbody td{white-space:nowrap;vertical-align:middle}
+#records .rank-line{display:block;white-space:nowrap;line-height:1.55}
+@media(max-width:480px){
+ #records{overflow-x:auto;-webkit-overflow-scrolling:touch}
+ #records table{min-width:780px!important}
+ #records thead th{font-size:11px!important;padding:8px 6px!important}
+ #records tbody td{font-size:11px!important;padding:7px 6px!important}
+ #records .rank-line{font-size:10px!important;line-height:1.5}
+}
 </style></head>
 <body>
 <div class="wrap">
@@ -358,7 +372,7 @@ function sortAnalyticsRecords(records){
 function sortMark(key){return recordsSortKey===key?' ▼':''}
 function renderRecords(){
   const list=filteredAnalyticsSessions(),rs=sortAnalyticsRecords(analyticsRecords(list));const count=document.getElementById('filterCount');if(count)count.textContent=`${list.length}セット・${rs.reduce((a,r)=>a+r.rounds,0)}半荘`;
-  $('#records').innerHTML=rs.length?`<table><thead><tr><th>順位</th><th>名前</th><th>セット</th><th>半荘</th><th><button class="sort-header" data-sort="avgRank">平均順位${sortMark('avgRank')}</button></th><th><button class="sort-header" data-sort="topRate">1着率${sortMark('topRate')}</button></th><th><button class="sort-header" data-sort="place2Rate">連対率${sortMark('place2Rate')}</button></th><th>順位分布</th><th><button class="sort-header" data-sort="score">累計点${sortMark('score')}</button></th><th>通算収支</th></tr></thead><tbody>${rs.map((r,i)=>`<tr><td>${i+1}</td><td><button class="player-link" data-player="${esc(r.name)}">${esc(r.name)}</button></td><td>${r.sessions}</td><td>${r.rounds}</td><td><b>${r.avgRank.toFixed(2)}</b></td><td>${r.topRate.toFixed(1)}%</td><td>${r.place2Rate.toFixed(1)}%</td><td>${r.ranks.map((v,j)=>`${j+1}着:${v}`).join(' / ')}</td><td class="${r.score>=0?'positive':'negative'}"><b>${fmt(r.score)}</b></td><td class="${r.payment>=0?'positive':'negative'}"><b>${yen(r.payment)}</b></td></tr>`).join('')}</tbody></table>`:'<div class="empty">条件に一致する確定済み対局がありません</div>';
+  $('#records').innerHTML=rs.length?`<table><thead><tr><th>順位</th><th>名前</th><th>セット</th><th>半荘</th><th><button class="sort-header" data-sort="avgRank">平均順位${sortMark('avgRank')}</button></th><th><button class="sort-header" data-sort="topRate">1着率${sortMark('topRate')}</button></th><th><button class="sort-header" data-sort="place2Rate">連対率${sortMark('place2Rate')}</button></th><th>順位分布</th><th><button class="sort-header" data-sort="score">累計点${sortMark('score')}</button></th><th>通算収支</th></tr></thead><tbody>${rs.map((r,i)=>`<tr><td>${i+1}</td><td><button class="player-link" data-player="${esc(r.name)}">${esc(r.name)}</button></td><td>${r.sessions}</td><td>${r.rounds}</td><td><b>${r.avgRank.toFixed(2)}</b></td><td>${r.topRate.toFixed(1)}%</td><td>${r.place2Rate.toFixed(1)}%</td><td><span class="rank-line">1着:${r.ranks[0]} / 2着:${r.ranks[1]}</span><span class="rank-line">3着:${r.ranks[2]} / 4着:${r.ranks[3]}</span></td><td class="${r.score>=0?'positive':'negative'}"><b>${fmt(r.score)}</b></td><td class="${r.payment>=0?'positive':'negative'}"><b>${yen(r.payment)}</b></td></tr>`).join('')}</tbody></table>`:'<div class="empty">条件に一致する確定済み対局がありません</div>';
   $('#records').querySelectorAll('[data-player]').forEach(b=>b.onclick=()=>showPlayerDetail(b.dataset.player));
   $('#records').querySelectorAll('[data-sort]').forEach(b=>b.onclick=()=>{recordsSortKey=b.dataset.sort;renderRecords()});
 }
